@@ -1,6 +1,6 @@
 [project]
 name = "pulchra"
-version = "v1.0.0"
+version = "1.0.0"
 description = "Protein Chain Restoration Algorithm - Full-atom model reconstruction from C-alpha traces"
 readme = "README.md"
 license = "MIT"
