@@ -5,6 +5,12 @@ A modern Python implementation of [PULCHRA](https://github.com/euplotes/pulchra)
 ## Installation
 
 ```bash
+pip install pulchra
+```
+
+### From Source
+
+```bash
 # Clone and enter the directory
 cd pulchra-py
 
