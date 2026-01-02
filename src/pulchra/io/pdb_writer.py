@@ -144,7 +144,10 @@ def _format_atom_line(
     insertion_code: str = "",
 ) -> str:
     """
-    Format a single ATOM line in PDB format.
+    Format a single ATOM line in strict PDB format.
+
+    Uses exact column positions per PDB specification for compatibility
+    with ProDy, ProteinMPNN, and other strict PDB parsers.
 
     PDB format specification:
     COLUMNS        DATA TYPE       CONTENTS
@@ -165,30 +168,43 @@ def _format_atom_line(
     77 - 78        LString(2)      Element symbol
     79 - 80        LString(2)      Charge on the atom
     """
-    # Pad or truncate atom name to 4 characters
-    # Standard PDB format: 2-char element right-justified in columns 13-14,
-    # remoteness and branch in 15-16
-    atom_name_formatted = atom_name.strip()
-    if len(atom_name_formatted) < 4:
-        # Left-pad with space if atom name is 1-3 chars
-        atom_name_formatted = " " + atom_name_formatted.ljust(3)
+    # Strip and format atom name for cols 13-16 (4 chars total)
+    name = atom_name.strip()
+    if len(name) < 4:
+        # Standard atoms (N, CA, CB, etc.): leading space, left-justify rest
+        atom_name_fmt = f" {name:<3}"
     else:
-        atom_name_formatted = atom_name_formatted[:4]
+        # 4-char names (e.g., some hydrogens): left-justify
+        atom_name_fmt = f"{name:<4}"
+
+    # Strip and format residue name for cols 18-20
+    res_name_fmt = res_name.strip()
 
     # Determine element from atom name if not provided
     if not element:
-        element = atom_name.strip()[0]
+        element = name[0] if name else "X"
 
-    # Format insertion code
-    ins_code = insertion_code if insertion_code else " "
-
+    # Build line with exact column positions
+    # fmt: off
     line = (
-        f"ATOM  {atom_num:5d} {atom_name_formatted}"
-        f" {res_name:3s} {chain:1s}{res_num:4d}{ins_code:1s}   "
-        f"{x:8.3f}{y:8.3f}{z:8.3f}"
-        f"{occupancy:6.2f}{temp_factor:6.2f}"
-        f"          {element:>2s}  "
+        f"ATOM  "                              # 1-6:   Record name
+        f"{atom_num:>5d} "                     # 7-11:  Serial number + col 12 space
+        f"{atom_name_fmt}"                     # 13-16: Atom name
+        f" "                                   # 17:    AltLoc (blank)
+        f"{res_name_fmt:<3} "                  # 18-20: ResName + col 21 space
+        f"{chain:1}"                           # 22:    Chain ID
+        f"{res_num:>4d}"                       # 23-26: Residue sequence number
+        f"{insertion_code or ' ':1}"           # 27:    Insertion code
+        f"   "                                 # 28-30: Blank
+        f"{x:>8.3f}"                           # 31-38: X coordinate
+        f"{y:>8.3f}"                           # 39-46: Y coordinate
+        f"{z:>8.3f}"                           # 47-54: Z coordinate
+        f"{occupancy:>6.2f}"                   # 55-60: Occupancy
+        f"{temp_factor:>6.2f}"                 # 61-66: Temperature factor
+        f"          "                          # 67-76: Blank
+        f"{element:>2}"                        # 77-78: Element symbol
     )
+    # fmt: on
 
     return line
 
